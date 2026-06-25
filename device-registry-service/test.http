@@ -17,3 +17,36 @@ Content-Type: application/json
 
 ### Get newly created device
 GET http://localhost:8081/device/sensor-004
+
+### Create device 2
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "b8:27:eb:bf:9d:51",
+    "name": "Living Room Sensor",
+    "location": "Living Room",
+    "type": "multi"
+}
+
+### Create device 3
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "00:0f:00:70:91:0a",
+    "name": "Kitchen Sensor",
+    "location": "Kitchen",
+    "type": "multi"
+}
+
+### Create device 4
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "1c:bf:ce:15:ec:4d",
+    "name": "Bedroom Sensor",
+    "location": "Bedroom",
+    "type": "multi"
+}
