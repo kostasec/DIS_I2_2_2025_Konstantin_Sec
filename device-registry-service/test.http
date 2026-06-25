@@ -1,0 +1,19 @@
+### Get existing device
+GET http://localhost:8081/device/sensor-009
+
+### Get non-existing device
+GET http://localhost:8081/device/nepostojeci
+
+### Create new device
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "name": "Smoke Detector",
+    "location": "Server Room",
+    "type": "smoke"
+}
+
+### Get newly created device
+GET http://localhost:8081/device/sensor-004
