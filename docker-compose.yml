@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: dis-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: devicedb
+      MYSQL_USER: dis
+      MYSQL_PASSWORD: dis123
+    ports:
+      - "3306:3306"
+
+  device-registry-service:
+    build:
+      context: ./device-registry-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devicedb
+      SPRING_DATASOURCE_USERNAME: dis
+      SPRING_DATASOURCE_PASSWORD: dis123
+    depends_on:
+      - mysql
+
+  monitoring-service:
+    build:
+      context: ./monitoring-service
+    ports:
+      - "8082:8082"
+
+  alert-service:
+    build:
+      context: ./alert-service
+    ports:
+      - "8083:8083"
+
+  telemetry-composite-service:
+    build:
+      context: ./telemetry-composite-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - device-registry-service
+      - monitoring-service
+      - alert-service

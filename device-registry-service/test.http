@@ -50,3 +50,13 @@ Content-Type: application/json
     "location": "Bedroom",
     "type": "multi"
 }
+
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "name": "Smoke Detector",
+    "location": "Server Room",
+    "type": "smoke"
+}
