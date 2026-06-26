@@ -6,6 +6,16 @@ services:
     ports:
       - "8761:8761"
 
+  gateway-service:
+    build:
+      context: ./gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
   mysql:
     image: mysql:8.0
     container_name: dis-mysql

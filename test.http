@@ -79,6 +79,35 @@ Content-Type: application/json
     "motion": false
 }
 
+### Send measurement
+POST http://localhost:8080/ingest
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "temperature": 25.3,
+    "humidity": 60.0,
+    "co": 0.015,
+    "lpg": 0.007,
+    "smoke": 0.02,
+    "light": true,
+    "motion": false
+}
+
+### Send measurement
+POST http://localhost:8085/ingest
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "temperature": 22.0,
+    "humidity": 55.0,
+    "co": 0.004,
+    "lpg": 0.005,
+    "smoke": 0.01,
+    "light": false,
+    "motion": false
+}
 
 ### ---- MONITORING (8082) ----
 
