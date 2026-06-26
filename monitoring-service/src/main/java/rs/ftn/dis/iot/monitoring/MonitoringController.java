@@ -11,15 +11,22 @@ import java.util.Map;
 @RestController
 public class MonitoringController {
 
+    private final MeasurementConsumer consumer;
+
+    public MonitoringController(MeasurementConsumer consumer) {
+        this.consumer = consumer;
+    }
+
     @GetMapping("/monitoring/{deviceId}/state")
     public ResponseEntity<Map<String, Object>> getDeviceState(@PathVariable String deviceId) {
-        return ResponseEntity.ok(Map.of(
-            "deviceId", deviceId,
-            "temperature", 22.5,
-            "humidity", 55.0,
-            "co", 0.004,
-            "status", "NORMAL",
-            "lastUpdated", Instant.now().toString()
-        ));
+        Map<String, Object> state = consumer.getState(deviceId);
+        if (state == null) {
+            return ResponseEntity.ok(Map.of(
+                "deviceId", deviceId,
+                "status", "NO_DATA",
+                "lastUpdated", Instant.now().toString()
+            ));
+        }
+        return ResponseEntity.ok(state);
     }
 }

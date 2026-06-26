@@ -1,0 +1,96 @@
+### ---- DEVICE REGISTRY (8081) ----
+
+### Get device
+GET http://localhost:8081/device/sensor-009
+
+### Create device 1
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "name": "Smoke Detector",
+    "location": "Server Room",
+    "type": "smoke"
+}
+
+### Create device 2
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "b8:27:eb:bf:9d:51",
+    "name": "Living Room Sensor",
+    "location": "Living Room",
+    "type": "multi"
+}
+
+### Create device 3
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "00:0f:00:70:91:0a",
+    "name": "Kitchen Sensor",
+    "location": "Kitchen",
+    "type": "multi"
+}
+
+### Create device 4
+POST http://localhost:8081/device
+Content-Type: application/json
+
+{
+    "deviceId": "1c:bf:ce:15:ec:4d",
+    "name": "Bedroom Sensor",
+    "location": "Bedroom",
+    "type": "multi"
+}
+
+### ---- INGEST (8085) ----
+
+### Send measurement
+POST http://localhost:8085/ingest
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "temperature": 25.3,
+    "humidity": 60.0,
+    "co": 0.015,
+    "lpg": 0.007,
+    "smoke": 0.02,
+    "light": true,
+    "motion": false
+}
+
+### Send measurement
+POST http://localhost:8085/ingest
+Content-Type: application/json
+
+{
+    "deviceId": "sensor-009",
+    "temperature": 22.0,
+    "humidity": 55.0,
+    "co": 0.004,
+    "lpg": 0.005,
+    "smoke": 0.01,
+    "light": false,
+    "motion": false
+}
+
+
+### ---- MONITORING (8082) ----
+
+### Get device state
+GET http://localhost:8082/monitoring/sensor-009/state
+
+### ---- ALERT (8083) ----
+
+### Get alerts for device
+GET http://localhost:8083/alert/sensor-009
+
+### ---- COMPOSITE (8084) ----
+
+### Get full telemetry
+GET http://localhost:8084/telemetry/sensor-009
