@@ -147,7 +147,7 @@ cd .. && docker-compose up -d --build <servis>   # prepakuj sliku i restartuj
 - **Kako radi:** `POST /ingest` primi JSON i preko **`StreamBridge`** objavi na Kafka topic `raw-measurements`. Ne validira ništa (razdvajanje odgovornosti).
 - **Sinhroni ulaz (REST) → asinhroni izlaz (Kafka).**
 
-### 5.3. processing-service (:8086) — Validacija i rutiranje ⭐
+### 5.3. processing-service (:8086) — Validacija i rutiranje
 - **Uloga:** mozak pipeline-a; odlučuje da li je merenje alarm.
 - **Kako radi:** Spring Cloud Stream **`Function`** `processRawMeasurement` čita sa `raw-measurements`:
   1. Izvuče `deviceId`, `co`, `temperature`.
