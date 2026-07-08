@@ -15,7 +15,7 @@ Projekat predstavlja implementaciju distribuiranog informacionog sistema za prik
 
 Pored osnovne funkcionalnosti, sistem sadrži i: **otpornost** na otkaz sinhrone komunikacije (circuit breaker), **nadzor performansi** (Prometheus + Grafana) i **CI/CD** pipeline (GitHub Actions).
 
-Dataset: [Environmental Sensor Telemetry Data](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k) — ~405.000 merenja sa 4 IoT uređaja (temperatura, vlažnost, CO, LPG, dim, svetlo, pokret).
+Dataset: [Environmental Sensor Telemetry Data](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k) ~405.000 redova merenja sa 4 IoT uređaja (temperatura, vlažnost, CO, LPG, dim, svetlo, pokret).
 
 ---
 
