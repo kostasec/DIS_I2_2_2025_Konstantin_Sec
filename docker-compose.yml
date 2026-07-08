@@ -27,6 +27,12 @@ services:
     ports:
       - "3306:3306"
 
+  redis:
+    image: redis:7.2
+    container_name: dis-redis
+    ports:
+      - "6379:6379"
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: dis-zookeeper
@@ -71,9 +77,12 @@ services:
     depends_on:
       - kafka
       - eureka-server
+      - redis
     environment:
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
 
   alert-service:
     build:
@@ -83,9 +92,12 @@ services:
     depends_on:
       - kafka
       - eureka-server
+      - redis
     environment:
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
 
   telemetry-composite-service:
     build:

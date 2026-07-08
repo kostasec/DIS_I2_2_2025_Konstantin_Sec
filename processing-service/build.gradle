@@ -23,12 +23,22 @@ dependencies {
 	implementation("org.springframework.cloud:spring-cloud-stream")
 	implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka")
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+	implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:kafka'
+	testImplementation 'org.awaitility:awaitility'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Docker 29 zahteva API >= 1.40, a podrazumevana docker-java verzija (1.32) puca sa 400.
+	// Pinujemo kompatibilnu API verziju za Testcontainers (radi na Docker 19.03+).
+	def dockerApi = System.getenv('DOCKER_API_VERSION') ?: '1.41'
+	environment 'DOCKER_API_VERSION', dockerApi
+	systemProperty 'api.version', dockerApi
 }
 
 ext {

@@ -18,9 +18,9 @@ public class MonitoringController {
     }
 
     @GetMapping("/monitoring/{deviceId}/state")
-    public ResponseEntity<Map<String, Object>> getDeviceState(@PathVariable String deviceId) {
-        Map<String, Object> state = consumer.getState(deviceId);
-        if (state == null) {
+    public ResponseEntity<Map<Object, Object>> getDeviceState(@PathVariable String deviceId) {
+        Map<Object, Object> state = consumer.getState(deviceId);
+        if (state == null || state.isEmpty()) {
             return ResponseEntity.ok(Map.of(
                 "deviceId", deviceId,
                 "status", "NO_DATA",

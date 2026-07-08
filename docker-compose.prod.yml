@@ -1,0 +1,64 @@
+# Produkcioni override za docker-compose.yml.
+# Pokretanje:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Razlika u odnosu na dev (bazni compose):
+#   - tajne (lozinke) dolaze iz .env umesto plaintext-a u fajlu
+#   - aplikacije rade pod Spring profilom "prod" (device-registry: ddl-auto=validate, bez SQL logova)
+#   - restart: unless-stopped na svim kontejnerima (samo-oporavak posle pada/restarta hosta)
+
+services:
+
+  mysql:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+  zookeeper:
+    restart: unless-stopped
+
+  kafka:
+    restart: unless-stopped
+
+  eureka-server:
+    restart: unless-stopped
+
+  gateway-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+
+  device-registry-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    restart: unless-stopped
+
+  monitoring-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+
+  alert-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+
+  telemetry-composite-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+
+  ingest-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+
+  processing-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped

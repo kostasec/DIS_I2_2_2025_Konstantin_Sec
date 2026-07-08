@@ -2,28 +2,32 @@ package rs.ftn.dis.iot.monitoring;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @Configuration
 public class MeasurementConsumer {
 
-    private final Map<String, Map<String, Object>> deviceStates = new ConcurrentHashMap<>();
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public MeasurementConsumer(RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @Bean
     public Consumer<Map<String, Object>> stateUpdater() {
         return measurement -> {
             String deviceId = (String) measurement.get("deviceId");
             if (deviceId != null) {
-                deviceStates.put(deviceId, measurement);
+                redisTemplate.opsForHash().putAll("device:state:" + deviceId, measurement);
                 System.out.println("Updated state for device: " + deviceId);
             }
         };
     }
 
-    public Map<String, Object> getState(String deviceId) {
-        return deviceStates.get(deviceId);
+    public Map<Object, Object> getState(String deviceId) {
+        return redisTemplate.opsForHash().entries("device:state:" + deviceId);
     }
 }

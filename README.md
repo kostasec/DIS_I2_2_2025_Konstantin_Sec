@@ -23,18 +23,24 @@ Sistem se sastoji od dva sloja:
 **Komunikacija** — sinhrona (REST) i asinhrona (Apache Kafka)
 
 ```
-Senzor
-  ↓ HTTP POST
+Senzor / simulator
+  ↓ HTTP POST (preko Gateway 8080)
 ingest-service (8085)
   ↓ Kafka: raw-measurements
-processing-service (8086)
+processing-service (8086) ──sync REST: pragovi──► device-registry (8081) ← MySQL
   ↓ valid-measurements        ↓ threshold-breaches
 monitoring-service (8082)   alert-service (8083)
+  ↓ Redis (hash: stanje)      ↓ Redis (lista: alarmi)
   ↑                               ↑
-  └─── telemetry-composite (8084) ┘
-              ↑
-  device-registry (8081) ← MySQL
+  └─── telemetry-composite (8084) ┘   (agregira sva tri izvora)
 ```
+
+**Komunikacija:**
+- **Asinhrona (Kafka):** ingest → processing → monitoring/alert
+- **Sinhrona (REST):** processing → device-registry (pragovi), telemetry-composite → monitoring/alert/registry
+- Sve preko **Eureka** service discovery-ja; sinhroni pozivi koriste klijentski load balancing
+
+> 📄 Detaljan opis arhitekture, dijagrami (Mermaid) i tok podataka: [docs/arhitektura-i-tok.md](docs/arhitektura-i-tok.md)
 
 ---
 
@@ -55,8 +61,9 @@ monitoring-service (8082)   alert-service (8083)
 
 ### device-registry-service
 ```
-GET  /device/{id}     — dohvati uređaj
-POST /device          — registruj uređaj
+GET  /device/{id}             — dohvati uređaj
+GET  /device/{id}/thresholds  — pragovi alarma za uređaj (koristi processing-service)
+POST /device                  — registruj uređaj
 ```
 
 ### ingest-service
@@ -93,14 +100,23 @@ GET  /telemetry/{deviceId}  — kompletan agregiran odgovor
 
 ## Pragovi alarma
 
-| Parametar | Prag |
-|-----------|------|
-| CO | > 0.01 |
-| Temperatura | > 40°C |
+Pragovi su **specifični po uređaju** i čuvaju se u `device-registry-service` (MySQL).
+`processing-service` ih **sinhrono povlači** preko REST-a (`GET /device/{id}/thresholds`),
+uz klijentski load balancing kroz Eureka service discovery. Ako registry nije dostupan,
+koristi se podrazumevani prag (CO > 0.01, Temp > 40°C). Merenje se rutira na
+`threshold-breaches` ako premaši prag, inače na `valid-measurements`.
+
+| Uređaj | Lokacija | Prag CO | Prag temperature |
+|--------|----------|---------|------------------|
+| b8:27:eb:bf:9d:51 | Living Room | > 0.01 | > 40°C |
+| 00:0f:00:70:91:0a | Kitchen | > 0.02 | > 45°C |
+| 1c:bf:ce:15:ec:4d | Bedroom | > 0.01 | > 35°C |
 
 ---
 
 ## Pokretanje
+
+> 📄 Detaljno uputstvo za pipeline (build/test/deploy, dev vs prod): [docs/pipeline.md](docs/pipeline.md)
 
 ### Preduslovi
 - Docker Desktop
@@ -127,26 +143,42 @@ docker compose up -d
 
 ### Testiranje
 
+Uređaji se automatski registruju na startu (`DataInitializer`), sa pragovima iz tabele gore.
+
 ```bash
-# Dodaj uređaj
-curl -X POST http://localhost:8081/device \
+# Normalno merenje -> ide na monitoring (Living Room, prag temp 40)
+curl -X POST http://localhost:8080/ingest \
   -H "Content-Type: application/json" \
-  -d '{"deviceId":"sensor-009","name":"Smoke Detector","location":"Server Room","type":"smoke"}'
+  -d '{"deviceId":"b8:27:eb:bf:9d:51","temperature":22,"co":0.004}'
+curl http://localhost:8082/monitoring/b8:27:eb:bf:9d:51/state
 
-# Pošalji merenje (alarm)
-curl -X POST http://localhost:8085/ingest \
+# Breach merenje -> ide na alert (Bedroom, prag temp 35, pa temp=37 premašuje)
+curl -X POST http://localhost:8080/ingest \
   -H "Content-Type: application/json" \
-  -d '{"deviceId":"sensor-009","temperature":25.3,"humidity":60.0,"co":0.015,"lpg":0.007,"smoke":0.02,"light":true,"motion":false}'
+  -d '{"deviceId":"1c:bf:ce:15:ec:4d","temperature":37,"co":0.005}'
+curl http://localhost:8083/alert/1c:bf:ce:15:ec:4d
 
-# Proveri stanje
-curl http://localhost:8082/monitoring/sensor-009/state
-
-# Proveri alarme
-curl http://localhost:8083/alert/sensor-009
-
-# Kompletan odgovor
-curl http://localhost:8084/telemetry/sensor-009
+# Kompletan agregiran odgovor
+curl http://localhost:8084/telemetry/b8:27:eb:bf:9d:51
 ```
+
+> Isto merenje (`temp=37`) je breach za Bedroom (prag 35) ali ne i za Living Room (prag 40) —
+> demonstracija pragova po uređaju povučenih iz registry-ja.
+
+Za masovno testiranje pokreni simulator (replay dataset-a):
+```bash
+py simulator.py
+```
+
+### Pokretanje testova (unit + integracioni)
+
+Svi servisi sa testovima odjednom (iz root foldera):
+```cmd
+run-all-tests.bat
+```
+Ili po servisu: `gradlew test`.
+
+> Integracioni testovi (processing/monitoring/device-registry) koriste **Testcontainers** i traže **pokrenut Docker**. Na Docker-u 29+ je u `test` task-ovima pinovana API verzija (`api.version=1.41`) jer podrazumevana docker-java verzija puca sa HTTP 400. Detalji: [docs/pipeline.md](docs/pipeline.md).
 
 ---
 
@@ -159,19 +191,21 @@ curl http://localhost:8084/telemetry/sensor-009
 - Spring Cloud Stream function → `processing-service` (@Bean Function)
 
 ### van Steen (predavanja)
-- 2.1.2 SOA → REST komunikacija između servisa
+- 2.1.2 SOA → REST komunikacija između servisa (processing → device-registry za pragove)
 - 2.1.3 Publish-subscribe → Kafka topici
 - 4.3.3 Message-oriented persistent → asinhrona Kafka komunikacija
 - 3.2.2 Kontejneri → Docker i Docker Compose
+- Imenovanje i lociranje → Eureka service discovery + klijentski load balancing
 
 ---
 
 ## Tehnologije
 
 - Java 17
-- Spring Boot 3.x
-- Spring Cloud Stream
-- Apache Kafka
-- MySQL 8.0
+- Spring Boot 3.4.5
+- Spring Cloud 2024.0.1 (Stream, Netflix Eureka, LoadBalancer, Gateway)
+- Apache Kafka (asinhrona komunikacija)
+- MySQL 8.0 (registar uređaja i pragovi)
+- Redis 7.2 (živo stanje i alarmi)
 - Docker / Docker Compose
 - Gradle

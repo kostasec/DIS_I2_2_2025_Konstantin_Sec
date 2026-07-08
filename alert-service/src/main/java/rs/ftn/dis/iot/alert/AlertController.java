@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class AlertController {
@@ -18,7 +17,7 @@ public class AlertController {
     }
 
     @GetMapping("/alert/{deviceId}")
-    public ResponseEntity<List<Map<String, Object>>> getAlertsForDevice(@PathVariable String deviceId) {
+    public ResponseEntity<List<Object>> getAlertsForDevice(@PathVariable String deviceId) {
         return ResponseEntity.ok(consumer.getAlerts(deviceId));
     }
 }

@@ -20,16 +20,22 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("com.mysql:mysql-connector-j")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.boot:spring-boot-testcontainers")
+	testImplementation("org.testcontainers:junit-jupiter")
+	testImplementation("org.testcontainers:mysql")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	// Docker 29 zahteva API >= 1.40, a podrazumevana docker-java verzija (1.32) puca sa 400.
+	val dockerApi = System.getenv("DOCKER_API_VERSION") ?: "1.41"
+	environment("DOCKER_API_VERSION", dockerApi)
+	systemProperty("api.version", dockerApi)
 }
 
 extra["springCloudVersion"] = "2024.0.1"

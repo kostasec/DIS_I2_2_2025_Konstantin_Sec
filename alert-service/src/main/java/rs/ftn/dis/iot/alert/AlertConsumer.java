@@ -2,16 +2,20 @@ package rs.ftn.dis.iot.alert;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @Configuration
 public class AlertConsumer {
 
-    private final Map<String, List<Map<String, Object>>> deviceAlerts = new ConcurrentHashMap<>();
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public AlertConsumer(RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @Bean
     public Consumer<Map<String, Object>> alertHandler() {
@@ -28,12 +32,13 @@ public class AlertConsumer {
             alert.put("createdAt", Instant.now().toString());
             alert.put("measurement", measurement);
 
-            deviceAlerts.computeIfAbsent(deviceId, k -> new ArrayList<>()).add(alert);
+            redisTemplate.opsForList().rightPush("device:alerts:" + deviceId, alert);
             System.out.println("Alert created for device: " + deviceId);
         };
     }
 
-    public List<Map<String, Object>> getAlerts(String deviceId) {
-        return deviceAlerts.getOrDefault(deviceId, List.of());
+    public List<Object> getAlerts(String deviceId) {
+        List<Object> alerts = redisTemplate.opsForList().range("device:alerts:" + deviceId, 0, -1);
+        return alerts != null ? alerts : List.of();
     }
 }
