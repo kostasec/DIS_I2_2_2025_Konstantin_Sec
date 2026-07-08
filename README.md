@@ -13,6 +13,8 @@
 
 Projekat predstavlja implementaciju distribuiranog informacionog sistema za prikupljanje, obradu i nadzor IoT telemetrijskih podataka u realnom vremenu. Sistem je realizovan primenom mikroservisne arhitekture zasnovane na Spring Boot i Spring Cloud tehnologijama, uz upotrebu Apache Kafka platforme za asinhroni prenos poruka između servisa.
 
+Pored osnovne funkcionalnosti, sistem sadrži i: **otpornost** na otkaz sinhrone komunikacije (circuit breaker), **nadzor performansi** (Prometheus + Grafana) i **CI/CD** pipeline (GitHub Actions).
+
 Dataset: [Environmental Sensor Telemetry Data](https://www.kaggle.com/datasets/garystafford/environmental-sensor-data-132k) — ~405.000 merenja sa 4 IoT uređaja (temperatura, vlažnost, CO, LPG, dim, svetlo, pokret).
 
 ---
@@ -41,6 +43,7 @@ monitoring-service (8082)   alert-service (8083)
 - **Asinhrona (Kafka):** ingest → processing → monitoring/alert
 - **Sinhrona (REST):** processing → device-registry (pragovi), telemetry-composite → monitoring/alert/registry
 - Sve preko **Eureka** service discovery-ja; sinhroni pozivi koriste klijentski load balancing
+- **Otpornost:** sinhroni pozivi su zaštićeni **circuit breaker-om** (Resilience4j) — pad servisa vodi na fallback, ne na otkaz celog lanca
 
 > 📄 Detaljan opis arhitekture, dijagrami (Mermaid) i tok podataka: [docs/arhitektura-i-tok.md](docs/arhitektura-i-tok.md)
 
@@ -116,6 +119,24 @@ koristi se podrazumevani prag (CO > 0.01, Temp > 40°C). Merenje se rutira na
 
 ---
 
+## Monitoring i otpornost
+
+**Nadzor performansi (Prometheus + Grafana)** — svaki servis izlaže metrike na `/actuator/prometheus`; Prometheus ih skuplja, Grafana vizuelizuje.
+
+| Alat | URL | Šta pokazuje |
+|------|-----|--------------|
+| Grafana | http://localhost:3000 | Dashboard „DIS Microservices Overview" (JVM, HTTP, CPU, threads) — anoniman pristup |
+| Prometheus | http://localhost:9090 | Targeti i upiti (Status → Targets: svi servisi `UP`) |
+| Eureka | http://localhost:8761 | Registrovani servisi |
+
+**Otpornost (circuit breaker, Resilience4j)** — sinhroni pozivi su zaštićeni:
+- `processing-service` → `device-registry` (pragovi) — fallback na podrazumevane pragove
+- `telemetry-composite-service` → 3 servisa — svaki poziv ima svoje kolo; pad jednog servisa daje delimičan odgovor umesto greške
+
+Stanje kola je vidljivo na `/actuator/health`. Demonstracija: ugasi jedan servis (`docker stop ...`) i pozovi `/telemetry/{id}` — vraća 200 sa delimičnim podacima.
+
+---
+
 ## Pokretanje
 
 > 📄 Detaljno uputstvo za pipeline (build/test/deploy, dev vs prod): [docs/pipeline.md](docs/pipeline.md)
@@ -131,17 +152,17 @@ koristi se podrazumevani prag (CO > 0.01, Temp > 40°C). Merenje se rutira na
 git clone https://github.com/kostasec/DIS_I2_2_2025_Konstantin_Sec.git
 cd DIS_I2_2_2025_Konstantin_Sec
 
-# Build svih servisa
-cd device-registry-service && ./gradlew build -x test && cd ..
-cd ingest-service && ./gradlew build -x test && cd ..
-cd processing-service && ./gradlew build -x test && cd ..
-cd monitoring-service && ./gradlew build -x test && cd ..
-cd alert-service && ./gradlew build -x test && cd ..
-cd telemetry-composite-service && ./gradlew build -x test && cd ..
+# Build jar-ova svih servisa (Dockerfile kopira gotov jar, pa build ide pre docker-a)
+for s in eureka-server gateway-service device-registry-service monitoring-service \
+         alert-service telemetry-composite-service ingest-service processing-service; do
+  (cd "$s" && ./gradlew bootJar -x test)
+done
 
-# Pokretanje
+# Pokretanje (dev)
 docker compose up -d
 ```
+
+> Za produkcioni režim (tajne iz `.env`, prod profil, restart politika) vidi [docs/pipeline.md](docs/pipeline.md).
 
 ### Testiranje
 
@@ -184,30 +205,17 @@ Ili po servisu: `gradlew test`.
 
 ---
 
-## Mapiranje na literaturu
-
-### Larsson (vežbe)
-- Composite obrazac (poglavlje 3) → `telemetry-composite-service`
-- Spring Cloud Stream producer → `ingest-service` (StreamBridge)
-- Spring Cloud Stream consumer → `monitoring-service`, `alert-service` (@Bean Consumer)
-- Spring Cloud Stream function → `processing-service` (@Bean Function)
-
-### van Steen (predavanja)
-- 2.1.2 SOA → REST komunikacija između servisa (processing → device-registry za pragove)
-- 2.1.3 Publish-subscribe → Kafka topici
-- 4.3.3 Message-oriented persistent → asinhrona Kafka komunikacija
-- 3.2.2 Kontejneri → Docker i Docker Compose
-- Imenovanje i lociranje → Eureka service discovery + klijentski load balancing
-
----
-
 ## Tehnologije
 
 - Java 17
 - Spring Boot 3.4.5
-- Spring Cloud 2024.0.1 (Stream, Netflix Eureka, LoadBalancer, Gateway)
+- Spring Cloud 2024.0.1 (Stream, Netflix Eureka, LoadBalancer, Gateway, CircuitBreaker)
+- Resilience4j (circuit breaker)
 - Apache Kafka (asinhrona komunikacija)
 - MySQL 8.0 (registar uređaja i pragovi)
 - Redis 7.2 (živo stanje i alarmi)
+- Micrometer + Prometheus + Grafana (nadzor performansi)
 - Docker / Docker Compose
+- GitHub Actions (CI/CD)
+- Testcontainers (integracioni testovi)
 - Gradle

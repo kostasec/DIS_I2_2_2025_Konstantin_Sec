@@ -70,6 +70,9 @@ gradlew test
 | device-registry-service | ✅ | ✅ MySQL | da |
 | alert-service | ✅ | — | ne |
 | ingest-service | ✅ | — | ne |
+| telemetry-composite-service | ✅ | — | ne |
+
+Ukupno **44 testa** (37 unit + 3 Testcontainers integraciona). Circuit breaker fallback pokriven testovima u `processing` i `telemetry-composite`.
 
 Integracioni testovi koriste **Testcontainers** — dižu prave Kafka/Redis/MySQL kontejnere tokom testa, pa **Docker mora biti pokrenut**.
 
@@ -88,7 +91,7 @@ Pošto su jar-ovi izgrađeni, slike se prave iz `docker-compose.yml` (`build.con
 ```bash
 docker compose build
 ```
-Ovo gradi sliku za svaki app servis iz njegovog `build/libs/*.jar`. Infrastruktura (MySQL, Redis, Kafka, Zookeeper) koristi gotove slike sa Docker Hub-a i ne gradi se.
+Ovo gradi sliku za svaki app servis iz njegovog `build/libs/*.jar`. Infrastruktura (MySQL, Redis, Kafka, Zookeeper, Prometheus, Grafana) koristi gotove slike sa Docker Hub-a i ne gradi se.
 
 ---
 
@@ -113,6 +116,8 @@ docker compose ps                 # svi kontejneri Up
 ```
 Eureka dashboard: <http://localhost:8761> (svi servisi `UP`).
 Test toka podataka: `python simulator.py` pa `curl http://localhost:8082/monitoring/<id>/state`.
+
+Stack uključuje i **nadzor**: Prometheus <http://localhost:9090> (Status → Targets) i Grafana <http://localhost:3000> (dashboard „DIS Microservices Overview", anoniman pristup). Metrike se skupljaju sa `/actuator/prometheus` svakog servisa.
 
 ### 4.2. Produkcija (prod)
 
