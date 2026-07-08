@@ -41,6 +41,11 @@ public class DeviceEntity {
     public Double getCoThreshold() { return coThreshold; }
     public Double getTempThreshold() { return tempThreshold; }
 
+    // Setteri su neophodni da Jackson moze da deserijalizuje telo POST /device zahteva.
+    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
+    public void setName(String name) { this.name = name; }
+    public void setLocation(String location) { this.location = location; }
+    public void setType(String type) { this.type = type; }
     public void setCoThreshold(Double coThreshold) { this.coThreshold = coThreshold; }
     public void setTempThreshold(Double tempThreshold) { this.tempThreshold = tempThreshold; }
 }

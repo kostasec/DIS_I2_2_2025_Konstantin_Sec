@@ -73,4 +73,19 @@ class DeviceRegistryIntegrationTest {
         assertThat(resp.getBody().coThreshold()).isEqualTo(0.02);
         assertThat(resp.getBody().tempThreshold()).isEqualTo(45.0);
     }
+
+    @Test
+    void createsDeviceViaPost_andReadsBack() {
+        DeviceEntity dev = new DeviceEntity("postDev", "Garage Sensor", "Garage", "multi", 0.015, 42.0);
+
+        ResponseEntity<DeviceEntity> created = rest.postForEntity("/device", dev, DeviceEntity.class);
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(created.getBody().getDeviceId()).isEqualTo("postDev"); // dokaz da deserijalizacija radi
+
+        ResponseEntity<DeviceThresholds> thresholds =
+                rest.getForEntity("/device/postDev/thresholds", DeviceThresholds.class);
+        assertThat(thresholds.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(thresholds.getBody().coThreshold()).isEqualTo(0.015);
+        assertThat(thresholds.getBody().tempThreshold()).isEqualTo(42.0);
+    }
 }

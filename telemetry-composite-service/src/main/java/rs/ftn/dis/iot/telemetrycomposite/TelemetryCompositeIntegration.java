@@ -9,11 +9,15 @@ import java.util.Map;
 @Component
 public class TelemetryCompositeIntegration {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     private static final String DEVICE_URL = "http://device-registry-service:8081/device/";
     private static final String MONITORING_URL = "http://monitoring-service:8082/monitoring/";
     private static final String ALERT_URL = "http://alert-service:8083/alert/";
+
+    public TelemetryCompositeIntegration(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     public TelemetryAggregate getAggregate(String deviceId) {
         Map device = restTemplate.getForObject(DEVICE_URL + deviceId, Map.class);

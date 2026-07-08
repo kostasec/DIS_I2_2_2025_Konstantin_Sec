@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 REM Runs unit + integration tests for all services that have tests.
 REM Note: Docker Desktop must be running (integration tests start Kafka/Redis/MySQL).
 
-set SERVICES=processing-service monitoring-service alert-service ingest-service device-registry-service
+set SERVICES=processing-service monitoring-service alert-service ingest-service device-registry-service telemetry-composite-service
 set FAILED=
 
 for %%s in (%SERVICES%) do (
