@@ -19,58 +19,9 @@ Ključni poslovni koncept je **prag po uređaju**: kuhinja toleriše više CO i 
 
 ## 2. Dijagram arhitekture
 
-```mermaid
-flowchart TB
-    sim["CSV simulator / curl"]
-    op["Operater / Dashboard"]
+![Arhitektura sistema](../architecture.png)
 
-    subgraph GW["Ulazna tačka"]
-        gateway["gateway-service :8080"]
-    end
-
-    subgraph SVC["Mikroservisi poslovne logike"]
-        ingest["ingest-service :8085"]
-        processing["processing-service :8086"]
-        monitoring["monitoring-service :8082"]
-        alert["alert-service :8083"]
-        registry["device-registry-service :8081"]
-        composite["telemetry-composite-service :8084"]
-    end
-
-    subgraph INFRA["Infrastruktura"]
-        eureka["eureka-server :8761"]
-        kafka[("Kafka :9092")]
-        mysql[("MySQL :3306")]
-        redis[("Redis :6379")]
-    end
-
-    sim -->|"POST /ingest"| gateway
-    op -->|"GET nadzor"| gateway
-
-    gateway -->|lb| ingest
-    gateway -->|lb| monitoring
-    gateway -->|lb| alert
-    gateway -->|lb| composite
-    gateway -->|lb| registry
-
-    ingest -->|"Kafka: raw-measurements"| kafka
-    kafka -->|"raw-measurements"| processing
-    processing -.->|"sync REST: pragovi"| registry
-    processing -->|"Kafka: valid-measurements"| kafka
-    processing -->|"Kafka: threshold-breaches"| kafka
-    kafka -->|"valid-measurements"| monitoring
-    kafka -->|"threshold-breaches"| alert
-
-    monitoring --> redis
-    alert --> redis
-    registry --> mysql
-
-    composite -.->|"sync REST"| monitoring
-    composite -.->|"sync REST"| alert
-    composite -.->|"sync REST"| registry
-```
-
-**Legenda:** pune strelice sa `Kafka:` = **asinhrona** komunikacija (poruke preko topica); isprekidane strelice `sync REST` = **sinhroni** REST poziv (pozivalac čeka odgovor). Svi servisi su registrovani na Eureka; `lb` označava load-balanced rutiranje kroz service discovery.
+**Legenda:** ljubičaste strelice = **asinhrona** komunikacija preko **Kafka** topica (`raw-measurements`, `valid-measurements`, `threshold-breaches`); isprekidane sive strelice = **sinhroni REST** pozivi (telemetrija/nadzor preko Gateway-a, `sync: pragovi` processing→registry, upiti composite-a); zelene linije = veze servisa sa bazama (MySQL/Redis). Svi servisi su registrovani na **Eureka** service discovery.
 
 ---
 
@@ -176,40 +127,7 @@ cd .. && docker-compose up -d --build <servis>   # prepakuj sliku i restartuj
 
 ## 6. Tok podataka (end-to-end)
 
-```mermaid
-sequenceDiagram
-    participant C as Simulator/curl
-    participant G as Gateway :8080
-    participant I as ingest :8085
-    participant K as Kafka
-    participant P as processing :8086
-    participant R as registry :8081
-    participant M as monitoring :8082
-    participant A as alert :8083
-
-    C->>G: POST /ingest (merenje)
-    G->>I: lb -> ingest
-    I->>K: raw-measurements (async)
-    I-->>C: "Measurement published to Kafka"
-
-    K->>P: raw-measurements
-    P->>R: GET /device/{id}/thresholds (sync REST)
-    R-->>P: pragovi
-    alt breach (premašuje prag)
-        P->>K: threshold-breaches
-        K->>A: threshold-breaches
-        A->>A: upiši alarm u Redis listu
-    else normalno
-        P->>K: valid-measurements
-        K->>M: valid-measurements
-        M->>M: upiši stanje u Redis hash
-    end
-
-    Note over C,A: Kasnije, operater čita rezultat
-    C->>G: GET /monitoring/{id}/state
-    G->>M: lb -> monitoring
-    M-->>C: stanje iz Redis-a
-```
+![Tok podataka end-to-end](../data-flow.png)
 
 **Koraci ukratko:**
 1. Klijent šalje merenje na `POST /ingest` (kroz Gateway).
