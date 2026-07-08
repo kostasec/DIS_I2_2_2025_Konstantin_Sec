@@ -45,7 +45,7 @@ monitoring-service (8082)   alert-service (8083)
 - Sve preko **Eureka** service discovery-ja; sinhroni pozivi koriste klijentski load balancing
 - **Otpornost:** sinhroni pozivi su zaštićeni **circuit breaker-om** (Resilience4j) — pad servisa vodi na fallback, ne na otkaz celog lanca
 
-> 📄 Detaljan opis arhitekture, dijagrami (Mermaid) i tok podataka: [docs/arhitektura-i-tok.md](docs/arhitektura-i-tok.md)
+> 📄 Detaljan opis arhitekture, dijagrami i tok podataka: [docs/arhitektura-i-tok.md](docs/arhitektura-i-tok.md)
 
 ---
 
