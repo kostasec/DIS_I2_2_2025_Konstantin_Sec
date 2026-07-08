@@ -153,4 +153,11 @@ Prod se dobija kombinovanjem baznog compose-a sa **prod override-om** (`docker-c
 
 - **Šema u produkciji:** `ddl-auto=validate` zahteva da tabele **već postoje** — Hibernate ih više ne kreira. Pri prvom prod deploy-u na praznu bazu treba prethodno postaviti šemu (npr. pokretanjem dev-a jednom, ili — u pravoj produkciji — alatom za migracije poput **Flyway** ili **Liquibase**). Ovaj projekat namerno ostavlja migracije kao sledeći korak.
 - **Infra portovi:** Docker Compose override ne može da *ukloni* portove definisane u baznom fajlu (liste portova se spajaju, ne zamenjuju). Zato su u prod-u infra portovi i dalje izloženi; pravo skrivanje bi zahtevalo restrukturiranje baznog compose-a ili poseban prod compose bez `ports`.
-- **CI/CD (opciono, nije implementirano):** spec tretira CI/CD kao bonus. Prirodno mesto je npr. GitHub Actions workflow sa koracima: `gradlew build` (svi servisi) → `gradlew test` (uz Docker za Testcontainers) → `docker compose build`. Nije deo osnovne ocene.
+## CI/CD (GitHub Actions)
+
+Pipeline je automatizovan preko GitHub Actions-a — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Pokreće se na svaki `push` i `pull_request` ka `main`:
+
+- **`test`** — matrica preko 6 servisa sa testovima; svaki `./gradlew test`. Runner (`ubuntu-latest`) ima Docker, pa **Testcontainers integracioni testovi rade** u CI-ju.
+- **`package`** — matrica preko svih 8 servisa; svaki `./gradlew bootJar` (dokaz da sve pakuje).
+
+Status build-a je vidljiv kao badge na vrhu `README.md`. Naredni prirodni korak (nije obavezan) bio bi `deploy` job koji gradi Docker slike i objavljuje ih u registar.

@@ -1,5 +1,7 @@
 # DIS_I2_2_2025_Konstantin_Sec
 
+[![CI](https://github.com/kostasec/DIS_I2_2_2025_Konstantin_Sec/actions/workflows/ci.yml/badge.svg)](https://github.com/kostasec/DIS_I2_2_2025_Konstantin_Sec/actions/workflows/ci.yml)
+
 **Ime i prezime:** Konstantin Šec  
 **Broj indeksa:** I2 2/2025  
 **Predmet:** Distribuirani informacioni sistemi  
