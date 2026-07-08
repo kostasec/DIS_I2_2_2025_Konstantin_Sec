@@ -1,7 +1,11 @@
 package rs.ftn.dis.iot.processing;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.timelimiter.TimeLimiterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
@@ -13,7 +17,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 /**
  * Unit testovi za ThresholdService — HTTP sloj je mokovan (MockRestServiceServer),
- * pa se testira kesiranje, obrada null-a i fallback na podrazumevane pragove.
+ * a circuit breaker je pravi Resilience4j (fallback na podrazumevane pragove).
  */
 class ThresholdServiceTest {
 
@@ -25,7 +29,9 @@ class ThresholdServiceTest {
     void setUp() {
         builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        service = new ThresholdService(builder);
+        CircuitBreakerFactory<?, ?> circuitBreakerFactory = new Resilience4JCircuitBreakerFactory(
+                CircuitBreakerRegistry.ofDefaults(), TimeLimiterRegistry.ofDefaults(), null);
+        service = new ThresholdService(builder, circuitBreakerFactory);
     }
 
     @Test
@@ -67,7 +73,7 @@ class ThresholdServiceTest {
     }
 
     @Test
-    void registryFailure_fallsBackToDefaults() {
+    void registryFailure_circuitBreakerFallsBackToDefaults() {
         server.expect(requestTo("http://device-registry-service/device/dev1/thresholds"))
                 .andRespond(withServerError());
 
