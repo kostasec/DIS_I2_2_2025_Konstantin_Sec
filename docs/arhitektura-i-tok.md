@@ -19,7 +19,7 @@ Ključni poslovni koncept je **prag po uređaju**: kuhinja toleriše više CO i 
 
 ## 2. Dijagram arhitekture
 
-![Arhitektura sistema](../architecture.png)
+![Arhitektura sistema](architecture.png)
 
 **Legenda:** ljubičaste strelice = **asinhrona** komunikacija preko **Kafka** topica (`raw-measurements`, `valid-measurements`, `threshold-breaches`); isprekidane sive strelice = **sinhroni REST** pozivi (telemetrija/nadzor preko Gateway-a, `sync: pragovi` processing→registry, upiti composite-a); zelene linije = veze servisa sa bazama (MySQL/Redis). Svi servisi su registrovani na **Eureka** service discovery.
 
@@ -127,7 +127,7 @@ cd .. && docker-compose up -d --build <servis>   # prepakuj sliku i restartuj
 
 ## 6. Tok podataka (end-to-end)
 
-![Tok podataka end-to-end](../data-flow.png)
+![Tok podataka end-to-end](data-flow.png)
 
 **Koraci ukratko:**
 1. Klijent šalje merenje na `POST /ingest` (kroz Gateway).
